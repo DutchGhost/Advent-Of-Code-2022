@@ -1,6 +1,15 @@
-const INPUT: &'static str = include_str!("../input.txt");
+const INPUT: &str = include_str!("../input.txt");
 
-use std::collections::HashSet;
+mod bit;
+use bit::ToBit;
+
+fn to_bitset(s: impl IntoIterator<Item = impl ToBit>) -> u64 {
+    s.into_iter().fold(0u64, |acc, item| {
+        let bit = item.to_bit();
+
+        acc | bit
+    })
+}
 
 fn solve(input: impl AsRef<str>) -> u32 {
     input
@@ -8,22 +17,12 @@ fn solve(input: impl AsRef<str>) -> u32 {
         .lines()
         .map(str::as_bytes)
         .map(|bytes| bytes.split_at(bytes.len() / 2))
-        .map(|(r1, r2)| {
-            // really.... why are we using hashsets?
-            (
-                r1.iter().copied().collect::<HashSet<_>>(),
-                r2.iter().copied().collect::<HashSet<_>>(),
-            )
-        })
-        .filter_map(|(r1, r2)| {
-            r1.intersection(&r2)
-                .map(|letter| match letter {
-                    b'a'..=b'z' => letter - 96,
-                    b'A'..=b'Z' => letter - 64 + 26,
-                    _ => panic!("not a good range"),
-                })
-                .map(|common| common as u32)
-                .nth(0)
+        .map(|(c1, c2)| {
+            let bitset_c1 = to_bitset(c1.iter());
+            let bitset_c2 = to_bitset(c2.iter());
+
+            let common = bitset_c1 & bitset_c2;
+            common.trailing_zeros() + 1
         })
         .sum()
 }
